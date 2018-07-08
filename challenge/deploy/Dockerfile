@@ -28,8 +28,10 @@ RUN echo "Blocked by ctf_xinetd" > /etc/banner_fail
 
 
 COPY ./bin/ /home/ctf/
+
 RUN make comp
 RUN rm Makefile && rm *.c && rm *.h && rm *.o
+
 RUN chown -R root:ctf /home/ctf
 RUN chmod -R 750 /home/ctf
 RUN chmod 740 /home/ctf/flag
