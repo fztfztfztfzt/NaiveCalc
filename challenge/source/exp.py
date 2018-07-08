@@ -56,7 +56,7 @@ def main():
 	while iii<5 and b==0:
 		if iii!=0:
 			p.close()
-			p=process('./rpc')
+			p=remote("127.0.0.1",1337)
 		flag1=True
 		while flag1:
 			try:
@@ -92,7 +92,7 @@ def main():
 				# log.failure(e.message)
 				# sleep(2)
 				p.close()
-				p=process('./rpc')
+				p=remote("127.0.0.1",1337)
 				# context(log_level='info')
 		iter=0
 		qq=1000
@@ -135,7 +135,7 @@ def main():
 		except Exception as e:
 			# log.failure("Failed2. Try again...")
 			p.close()
-			p=process('./rpc')
+			p=remote("127.0.0.1",1337)
 		else:
 			iii+=1
 	the_flag=''
