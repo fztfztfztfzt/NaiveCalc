@@ -20,7 +20,6 @@ char done_packet[13]="RPCN\x00\x00\x00\x0c\x00\x00\xbe\xef\x00";
 char MAGIC_SEND[5]="RPCM\x00";
 char MAGIC_RECV[5]="RPCN\x00";
 char error_packet[13]="RPCN\x00\x00\x00\x0c\x00\x00\xbe\xf0\x00";
-char dest[MAX_SIZE]={0};
 
 char sha256[]="e30d9ca28b3d7affced15bfc90e85cf426bc42413692e437c586a5ee2a1bcea2";
 char md5[]="8b8431584f7f4b4119b89d6f6ef6523e";
@@ -90,7 +89,8 @@ long calculation(char *str)
 		}
 	}
 	char oper[MAX_SIZE] = {0};                  /*操作符栈，初始化*/  
-	long operand[MAX_SIZE] = {0};                /*数据栈，初始化*/  
+	long operand[MAX_SIZE] = {0};  
+	char dest[MAX_SIZE]={0};
 	long  top_num = -1;  
 	long top_oper = -1;  
 	char* temp;  
@@ -110,7 +110,7 @@ long calculation(char *str)
 	while(*str != '\0')  
 	{  
 		temp = dest;
-		while(*str !='+' && *str != '-' && *str != '*' && *str != '/' && *str != '(' && *str != ')' && *str != '\x00' && *str != '\n')
+		while(*str>='0' && *str<='9')
 		{  
 			*temp = *str;  
 			 str ++;  
@@ -227,6 +227,8 @@ void insert_key(char *user_key){
 }
 
 void if_you_forget_expr_id(int len){
+	if(len<=4)
+		exit(1);
 	struct user *current_user;
 	void *p=malloc(len+1);
 	// 
@@ -234,6 +236,10 @@ void if_you_forget_expr_id(int len){
 		exit(-1);
 	char *tmp=p;
 	int uuid_len=u32(tmp);
+	if (uuid_len<0)
+		exit(-1);
+	if(len!=4+uuid_len)
+		exit(1);
 	if(uuid_len!=8)
 		exit(-1);
 	tmp+=4;
@@ -260,6 +266,8 @@ void if_you_forget_expr_id(int len){
 }
 
 void call_expr(int len){
+	if(len<=4)
+		exit(1);
 	struct user *current_user;
 	void *p=malloc(len+1);
 	// 
@@ -267,6 +275,9 @@ void call_expr(int len){
 		exit(-1);
 	char *tmp=p;
 	int uuid_len=u32(tmp);
+	if(len<=4+4+uuid_len)
+		exit(1);
+
 	if(uuid_len!=8)
 		exit(-1);
 	tmp+=4;
@@ -279,17 +290,23 @@ void call_expr(int len){
 	}
 	tmp+=uuid_len;
 	int corr_id_len=u32(tmp);
-	tmp+=4;
 	if (corr_id_len<0)
 		exit(-1);
+	
+	if(len<=4+4+4+uuid_len+corr_id_len)
+		exit(1);
+	tmp+=4;
 	char *corr_id=(char *)malloc(corr_id_len+1);
 	memcpy(corr_id,tmp,corr_id_len);
 	corr_id[corr_id_len]='\x00';
 	tmp+=corr_id_len;
 	int expr_len=u32(tmp);
-	tmp+=4;
+
 	if (expr_len<0)
 		exit(-1);
+	if(len!=4+4+4+uuid_len+corr_id_len+expr_len)
+		exit(1);
+	tmp+=4;
 	char *expr=(char *)malloc(expr_len+1);
 	memcpy(expr,tmp,expr_len);
 	expr[expr_len]='\x00';
@@ -356,6 +373,8 @@ void* ReSolve0(void* args){			/*Use thread to complete complicated work simutane
 }
 
 void get_result(int len){
+	if(len<=4)
+		exit(1);
 	void *p=malloc(len+1);
 	// read all the data containing uuid_len(4),uuid,corr_id_len(4),corr_id
 	if(read(0,p,len)!=len){
@@ -365,6 +384,8 @@ void get_result(int len){
 
 	char *tmp=p;
 	int uuid_len=u32(tmp);
+	if(len<=4+4+uuid_len)
+		exit(1);
 	tmp+=4;
 	if (uuid_len<0)
 		exit(-1);
@@ -374,6 +395,8 @@ void get_result(int len){
 	
 	tmp+=uuid_len;
 	int corr_id_len=u32(tmp);
+	if(len!=4+4+uuid_len+corr_id_len)
+		exit(1);
 	tmp+=4;
 	if (corr_id_len<0)
 		exit(-1);
@@ -490,6 +513,8 @@ int md5test(const char *string){
 }
 
 void status_extant_for_checker(int len){
+	if(len<=4)
+		exit(1);
 	void *p=malloc(len+1);
 	if(read(0,p,len)!=len){
 		write(1,error_packet,0xc);
@@ -497,6 +522,10 @@ void status_extant_for_checker(int len){
 	}
 	char *tmp=p;
 	int pwd_len=u32(tmp);
+	if (pwd_len<0)
+		exit(-1);
+	if(len!=4+pwd_len)
+		exit(1);
 	tmp+=4;
 	char *pwd=(char *)malloc(pwd_len+1);
 	memcpy(pwd,tmp,pwd_len);
