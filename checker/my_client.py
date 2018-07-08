@@ -2,7 +2,7 @@ import uuid
 import socket
 import struct
 import codecs
-DEBUG = True
+DEBUG = False
 if DEBUG:
 
     send = socket.socket.send
@@ -126,9 +126,8 @@ class RpcReplyPacket(RpcPacket):
 
     def from_bytes(self, conn):
         reply_bytes = conn.recv(4)
-        # if not reply_bytes.startswith(MAGIC_RECV):
-        #     # print(reply_bytes)
-        #     raise RpcPacketParseException('invalid reply message header')
+        if not reply_bytes.startswith(MAGIC_RECV):
+            raise RpcPacketParseException('invalid reply message header')
 
         reply_bytes = conn.recv(4)
         length = u32(reply_bytes)
@@ -138,7 +137,6 @@ class RpcReplyPacket(RpcPacket):
                 not reply_bytes.startswith(p32(0xbeef + 2)):
             raise RpcPacketParseException('invalid packet type')
         elif reply_bytes.startswith(p32(0xbeef + 2)):
-            # print("errrrrrrrrrrrrrrrrrrrrrrrrrrr")
             raise RpcPacketUnavailableException('not ready')
 
         return reply_bytes[4:]
@@ -170,8 +168,8 @@ class RpcReplyResultPacket(RpcReplyPacket):
         rest = super().from_bytes(conn)
         result_str_len = u32(rest[:4])
         rest = rest[4:]
-        # if len(rest) != result_str_len:
-        #     raise RpcPacketParseException('invalid result string length')
+        if len(rest) != result_str_len:
+            raise RpcPacketParseException('invalid result string length')
         self.result_bytes = rest
 
 
@@ -185,8 +183,8 @@ class RpcConnection(object):
 
     def send_expect(self, msg, expecting):
         send_len = self.conn.send(msg)
-        # if send_len != len(msg):
-        #     raise RpcConnectionException('send message not complete')
+        if send_len != len(msg):
+            raise RpcConnectionException('send message not complete')
         recved = self.conn.recv(len(expecting))
         if recved != expecting:
             raise RpcConnectionException(
@@ -195,8 +193,8 @@ class RpcConnection(object):
 
     def send_with_result(self, msg):
         send_len = self.conn.send(msg)
-        # if send_len != len(msg):
-        #     raise RpcConnectionException('send message not complete')
+        if send_len != len(msg):
+            raise RpcConnectionException('send message not complete')
         result_packet = RpcReplyResultPacket()
         result_packet.from_bytes(self.conn)
         return result_packet
