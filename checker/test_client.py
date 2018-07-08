@@ -1,7 +1,6 @@
 import my_client
 import random
 import time
-# from pwn import *
 SYMBOLS = [
     '+',
     '-',
@@ -53,7 +52,6 @@ def basic_test():
         rand(),
         rand(),
     )
-    # expr = gen_random_expr()
     res = client.call(expr)
     
     assert(res == int(eval(expr)))
@@ -75,7 +73,6 @@ def test_flag():
         raise my_client.NO_FLAG_EXCEPTION("The flag is ruined!")
     ###############
 
-# 2*3+12-5*(3+5)
 @test_case
 def basic_queue_test():
     client = my_client.RpcClient('localhost')
