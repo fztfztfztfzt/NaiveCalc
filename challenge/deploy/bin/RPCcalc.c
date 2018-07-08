@@ -31,6 +31,7 @@ void add_flag(char *usr,char *expr_id, char *expr){
 }
 
 void init(){
+  alarm(0x05);
   char admin[]="superusr";
   char expr_id[]="admin'sflag";
   insert_key(admin);

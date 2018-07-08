@@ -80,7 +80,7 @@ def basic_queue_test():
     expr2 = gen_add_expr()
     id1 = client.call_request(expr1)
     id2 = client.call_request(expr2)
-    time.sleep(3)
+    time.sleep(0.1)
     try:
         client.try_retrieve(id2)
         assert(False)
@@ -100,7 +100,7 @@ def random_queue_test(client=None):
     queue = []
     for i in range(random.randint(5, 20)):
         if random.random() < 0.25 and len(queue) > 0:
-            time.sleep(1)
+            time.sleep(0.1)
             cur_head = queue[0]
             cur_id = cur_head[0]
             cur_expr = cur_head[1]
@@ -111,7 +111,7 @@ def random_queue_test(client=None):
             expr=gen_random_expr()
             queue.append((client.call_request(expr), expr.replace('/', '//')))
     while len(queue) > 0:
-        time.sleep(1)
+        time.sleep(0.1)
         cur_head = queue[0]
         cur_id = cur_head[0]
         cur_expr = cur_head[1]
@@ -130,7 +130,7 @@ def random_queue_stoppable_test(client=None):
         if random.random() < 0.5:
             yield
         if random.random() < 0.25 and len(queue) > 0:
-            time.sleep(1)
+            time.sleep(0.1)
             cur_head = queue[0]
             cur_id = cur_head[0]
             cur_expr = cur_head[1]
@@ -141,7 +141,7 @@ def random_queue_stoppable_test(client=None):
             expr = gen_random_expr()
             queue.append((client.call_request(expr), expr.replace('/', '//')))
     while len(queue) > 0:
-        time.sleep(1)
+        time.sleep(0.1)
         cur_head = queue[0]
         cur_id = cur_head[0]
         cur_expr = cur_head[1]
