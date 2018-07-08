@@ -1,16 +1,13 @@
-# Docker Environment
+# Docker环境
 
-> A docker repository for deploying ctf problem
+## 构建镜像
+`sudo docker-compose build`
 
-## Configuration
+## 运行
+`sudo docker-compose up`  
+或者
+`sudo docker-compose up -d`
 
-Put files to floder `bin`. They'll be copied to /home/ctf. **Update the flag** at the same time.
-
-
-## Build and Run
-
-    docker-compose up
-
-or
-
-    docker-compose up -d
+## 更新flag
+在docker的container中运行  
+`flag echo xxxx > /home/ctf/flag`
