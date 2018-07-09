@@ -141,10 +141,29 @@ class RpcReplyPacket(RpcPacket):
 
         return reply_bytes[4:]
 
+    def extract_type(self,conn):
+        reply_bytes = conn.recv(4)
+        if not reply_bytes.startswith(MAGIC_RECV):
+            raise RpcPacketParseException('invalid reply message header')
+
+        reply_bytes = conn.recv(4)
+        length = u32(reply_bytes)
+
+        reply_bytes = conn.recv(length-8)
+        data=reply_bytes[4:]
+        reply_bytes=reply_bytes[:4]
+        return reply_bytes,data
+
 
 class RpcReplyDonePacket(RpcReplyPacket):
-    pass
-
+    def __init__(self):
+        super().__init__()
+        self.packet_type = p32(0xbeef + 0)
+    def from_bytes(self,conn):
+        pactype,result = super().extract_type(conn)
+        # print (pactype,self.packet_type)
+        assert pactype==self.packet_type
+        return pactype,result
 
 class RpcReplyErrorPacket(RpcReplyPacket):
     def __init__(self):
@@ -199,6 +218,27 @@ class RpcConnection(object):
         result_packet.from_bytes(self.conn)
         return result_packet
 
+    def send_with_type(self,msg):
+        send_len = self.conn.send(msg)
+        if send_len != len(msg):
+            raise RpcConnectionException('send message not complete')
+        result_packet = RpcReplyDonePacket()
+        return result_packet.from_bytes(self.conn)
+
+    def send_with_raw_reply(self,msg):
+        send_len = self.conn.send(msg)
+        if send_len != len(msg):
+            raise RpcConnectionException('send message not complete')
+        header=b''
+        header=self.conn.recv(4)
+        assert (header==b'RPCN' or header==b'')
+        if header==b'':
+            return b'\x00\x00\xbe\xf1',''
+        length=u32(self.conn.recv(4))
+        pac_type=self.conn.recv(4)
+        return pac_type,self.conn.recv(length-12)
+
+
     def close(self):
         self.conn.send(RpcClosePacket().into())
         self.conn.close()
@@ -220,7 +260,12 @@ class RpcClient(object):
             RpcReplyDonePacket().into()
         )
         return corr_id
-
+    def call_request1(self, expr , corr_id):
+        self.conn.send_expect(
+            RpcCallPacket(expr, corr_id, self.reply_to).into(),
+            RpcReplyDonePacket().into()
+        )
+        return corr_id
     def try_retrieve(self, corr_id):
         return self.conn.send_with_result(RpcRetrievePacket(self.reply_to, corr_id).into())
 
