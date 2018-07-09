@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 import my_client
 import random
 import time
@@ -60,7 +61,6 @@ def basic_test():
 
 @test_case
 def test_flag():
-
     client = my_client.RpcClient('localhost')
     ###############
     pwd=b'Ph0t1n1a\'S L0NG LONG PassW0rD'
@@ -71,8 +71,40 @@ def test_flag():
     res=client.conn.send_with_result(check)
     if(str(res.result_bytes).count('CISCN{')==0):
         raise my_client.NO_FLAG_EXCEPTION("The flag is ruined!")
+    client.close()
     ###############
+@test_case
+def test_func5():
+    client = my_client.RpcClient('localhost')
+    expr = gen_add_expr()
+    id1 = client.call_request(expr)
+    sttr=b'RPCM'
+    sttrr=my_client.p32(5)
+    dat=my_client.p32(len(client.reply_to))+client.reply_to.encode('utf-8')
+    check=sttr+my_client.p32(12+len(dat))+sttrr+dat
+    res=client.conn.send_with_result(check)
+    assert int(res.result_bytes.decode('utf-8'))==eval(expr)        
+    client.close()
 
+@test_case
+def test_multi_user():
+    corrid='phot'
+    conn=my_client.RpcConnection('localhost',1337)
+    uuid1=conn.send_with_result(b'RPCM\x00\x00\x00\x0c\x00\x00\x00\x01')
+    uuid2=conn.send_with_result(b'RPCM\x00\x00\x00\x0c\x00\x00\x00\x01')
+    assert (uuid1.packet_type==b'\x00\x00\xbe\xf2' and uuid2.packet_type==b'\x00\x00\xbe\xf2')
+    uuid1=uuid1.result_bytes
+    uuid2=uuid2.result_bytes
+    expr1=gen_add_expr()
+    expr2=gen_add_expr()
+    ret1=conn.send_with_type(b'RPCM'+my_client.p32(len(expr1)+12+12+8+4)+b'\x00\x00\x00\x03\x00\x00\x00\x08'+uuid1+b'\x00\x00\x00\x04phot'+my_client.p32(len(expr1))+bytes(expr1, encoding = "utf8"))
+    ret2=conn.send_with_type(b'RPCM'+my_client.p32(len(expr2)+12+12+8+4)+b'\x00\x00\x00\x03\x00\x00\x00\x08'+uuid1+b'\x00\x00\x00\x04phot'+my_client.p32(len(expr2))+bytes(expr2, encoding = "utf8"))
+    pactype,data=conn.send_with_raw_reply(b'RPCM\x00\x00\x00)\x00\x00\x00\x02\x00\x00\x00\x11'+uuid1+b';'+uuid1+b'\x00\x00\x00\x04phot')
+    # print(str(data[4:],encoding = "utf8"))
+    # print(str(eval(expr1))+';'+str(eval(expr2)))
+    assert (pactype==b'\x00\x00\xbe\xf1' or (pactype== b'\x00\x00\xbe\xf2' and  str(data[4:],encoding = "utf8")==str(eval(expr2))+';'+str(eval(expr1))) or ((pactype== b'\x00\x00\xbe\xf2' and  str(data[4:],encoding = "utf8")==str(eval(expr1))+';'+str(eval(expr2)))))
+    conn.close()
+    
 @test_case
 def basic_queue_test():
     client = my_client.RpcClient('localhost')
@@ -80,7 +112,7 @@ def basic_queue_test():
     expr2 = gen_add_expr()
     id1 = client.call_request(expr1)
     id2 = client.call_request(expr2)
-    time.sleep(0.1)
+    time.sleep(3)
     try:
         client.try_retrieve(id2)
         assert(False)
@@ -100,7 +132,7 @@ def random_queue_test(client=None):
     queue = []
     for i in range(random.randint(5, 20)):
         if random.random() < 0.25 and len(queue) > 0:
-            time.sleep(0.1)
+            time.sleep(1)
             cur_head = queue[0]
             cur_id = cur_head[0]
             cur_expr = cur_head[1]
@@ -111,7 +143,7 @@ def random_queue_test(client=None):
             expr=gen_random_expr()
             queue.append((client.call_request(expr), expr.replace('/', '//')))
     while len(queue) > 0:
-        time.sleep(0.1)
+        time.sleep(1)
         cur_head = queue[0]
         cur_id = cur_head[0]
         cur_expr = cur_head[1]
@@ -130,7 +162,7 @@ def random_queue_stoppable_test(client=None):
         if random.random() < 0.5:
             yield
         if random.random() < 0.25 and len(queue) > 0:
-            time.sleep(0.1)
+            time.sleep(1)
             cur_head = queue[0]
             cur_id = cur_head[0]
             cur_expr = cur_head[1]
@@ -141,7 +173,7 @@ def random_queue_stoppable_test(client=None):
             expr = gen_random_expr()
             queue.append((client.call_request(expr), expr.replace('/', '//')))
     while len(queue) > 0:
-        time.sleep(0.1)
+        time.sleep(1)
         cur_head = queue[0]
         cur_id = cur_head[0]
         cur_expr = cur_head[1]
@@ -186,18 +218,15 @@ def crossed_provider_test():
                 stop2 = True
 
 
-@test_case
-def multi_thread_test():
-    pass
-
-
 
 def test_all():
     test_flag()
+    test_func5()
     basic_test()
     basic_queue_test()
     random_queue_test()
     seperated_provider_test()
+    test_multi_user()
     crossed_provider_test()
 
 if __name__ == '__main__':
