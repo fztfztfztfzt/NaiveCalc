@@ -112,7 +112,7 @@ def basic_queue_test():
     expr2 = gen_add_expr()
     id1 = client.call_request(expr1)
     id2 = client.call_request(expr2)
-    time.sleep(3)
+    time.sleep(0.1)
     try:
         client.try_retrieve(id2)
         assert(False)
