@@ -9,7 +9,7 @@
 #include <math.h>
 #include <ctype.h>
 #include "calc.h"
-#define LEN_FLAG 40
+#define LEN_FLAG 0x80
 
 extern char error_packet[13];
 extern char retry_packet[13];
